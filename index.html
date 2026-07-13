@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UC Main — Interactive Campus Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy: #0B1F3F;
+    --royal: #16407F;
+    --gray: #EEF1F6;
+    --white: #FFFFFF;
+    --gold: #D6AD3F;
+    --ink: #24304A;
+    --ink-soft: #5C6B87;
+    --line: #DCE2ED;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--gray);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--navy);
+    margin:0;
+  }
+  .mono{
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.03em;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ---------- Layout shell ---------- */
+  .app{max-width:1180px;margin:0 auto;padding:0 24px;}
+  .topbar{
+    background:var(--navy);
+    color:var(--white);
+    position:sticky;top:0;z-index:40;
+    border-bottom:3px solid var(--gold);
+  }
+  .topbar-inner{
+    max-width:1180px;margin:0 auto;padding:14px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(155deg,var(--gold),#a9822a);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:700;color:var(--navy);font-size:17px;
+    flex:none;
+  }
+  .brand-text{line-height:1.15;}
+  .brand-text .k1{font-size:15px;font-weight:700;letter-spacing:0.02em;}
+  .brand-text .k2{font-size:11px;color:#B9C4DA;letter-spacing:0.04em;text-transform:uppercase;}
+  nav.primary{display:flex;gap:4px;flex-wrap:wrap;}
+  nav.primary button{
+    background:transparent;border:none;color:#CBD5EA;
+    padding:8px 12px;border-radius:999px;font-size:13.5px;font-weight:600;
+    transition:.15s;
+  }
+  nav.primary button:hover{color:var(--white);background:rgba(255,255,255,0.08);}
+  nav.primary button.active{color:var(--navy);background:var(--gold);}
+
+  /* ---------- Breadcrumb / wayfinding trail ---------- */
+  .trail{
+    max-width:1180px;margin:0 auto;padding:16px 24px 0 24px;
+  }
+  .trail-strip{
+    display:flex;align-items:center;gap:0;flex-wrap:wrap;
+    background:var(--white);border:1px solid var(--line);
+    border-radius:999px;padding:6px;
+  }
+  .trail-node{
+    display:flex;align-items:center;gap:8px;
+    padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-soft);
+  }
+  .trail-node.here{background:var(--navy);color:var(--white);}
+  .trail-arrow{color:var(--gold);font-weight:700;padding:0 2px;font-size:15px;}
+
+  /* ---------- Generic sections ---------- */
+  main{padding:28px 0 90px 0;}
+  .hero{
+    border-radius:24px;overflow:hidden;position:relative;
+    background:linear-gradient(120deg,var(--navy) 0%,var(--royal) 70%);
+    color:#fff;padding:64px 44px;margin-bottom:36px;
+    background-image:
+      radial-gradient(circle at 85% 20%, rgba(214,173,63,0.35), transparent 45%),
+      linear-gradient(120deg,var(--navy) 0%,var(--royal) 70%);
+  }
+  .hero .eyebrow{
+    font-family:'IBM Plex Mono',monospace;color:var(--gold);font-size:12.5px;
+    letter-spacing:0.14em;text-transform:uppercase;margin-bottom:14px;display:block;
+  }
+  .hero h1{color:#fff;font-size:44px;line-height:1.08;max-width:640px;}
+  .hero p{color:#CBD5EA;max-width:520px;margin-top:16px;font-size:16px;line-height:1.6;}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    background:var(--gold);color:var(--navy);font-weight:700;font-size:14px;
+    padding:13px 24px;border-radius:999px;border:none;margin-top:26px;
+  }
+  .btn:hover{background:#c49f34;}
+  .btn.ghost{
+    background:transparent;border:1.5px solid rgba(255,255,255,0.4);color:#fff;
+  }
+  .btn.small{padding:9px 16px;font-size:13px;margin-top:0;}
+
+  .section-title{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 18px 0;}
+  .section-title h2{font-size:24px;}
+  .section-title .num{font-family:'IBM Plex Mono',monospace;color:var(--ink-soft);font-size:12.5px;}
+
+  .grid{display:grid;gap:16px;}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+
+  .card{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;transition:.15s;display:flex;flex-direction:column;gap:10px;
+  }
+  .card:hover{border-color:var(--gold);box-shadow:0 8px 24px rgba(11,31,63,0.08);transform:translateY(-2px);}
+  .card .icon{
+    width:42px;height:42px;border-radius:12px;background:var(--gray);
+    display:flex;align-items:center;justify-content:center;color:var(--navy);
+  }
+  .card h3{font-size:16.5px;}
+  .card p{color:var(--ink-soft);font-size:13.5px;line-height:1.5;margin:0;}
+  .card .tag{
+    align-self:flex-start;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--navy);background:var(--gray);padding:3px 9px;border-radius:6px;
+  }
+
+  .photo-block{
+    border-radius:16px;overflow:hidden;position:relative;
+    background:linear-gradient(135deg,var(--navy),var(--royal));
+    aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;
+    color:#cfd9ee;
+  }
+  .photo-block .ph-icon{opacity:0.85;}
+  .photo-block .ph-label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:0.06em;text-transform:uppercase;color:#9fb0d1;}
+  .video-block{
+    border-radius:16px;background:var(--navy);aspect-ratio:16/9;position:relative;
+    display:flex;align-items:center;justify-content:center;
+    background-image:linear-gradient(rgba(11,31,63,0.55),rgba(11,31,63,0.75));
+  }
+  .play-btn{
+    width:62px;height:62px;border-radius:50%;background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .video-caption{position:absolute;bottom:14px;left:16px;color:#fff;font-size:13px;font-weight:600;}
+  .duration-chip{
+    position:absolute;top:14px;right:14px;background:rgba(0,0,0,0.5);color:#fff;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:6px;
+  }
+
+  .panel{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:26px;}
+  .two-col{display:grid;grid-template-columns:1.1fr 0.9fr;gap:26px;}
+
+  .meta-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .meta-chip{
+    display:flex;align-items:center;gap:6px;background:var(--gray);border-radius:999px;
+    padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--ink);
+  }
+  .meta-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);}
+
+  .nearby-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
+  .nearby-list li{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border:1px solid var(--line);border-radius:12px;font-size:13.5px;font-weight:600;
+    background:var(--white);
+  }
+  .nearby-list li:hover{border-color:var(--gold);}
+  .nearby-list li .go{color:var(--gold);font-weight:800;}
+
+  .floorplan{
+    background:var(--white);border:1px solid var(--line);border-radius:20px;
+    padding:26px;position:relative;min-height:360px;
+    overflow-x: auto;
+  }
+  .pin{
+    position:absolute;transform:translate(-50%,-100%);text-align:center;cursor:pointer;
+  }
+  .pin .dot{
+    width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    background:var(--navy);border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;margin:0 auto;
+  }
+  .pin .dot span{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:800;}
+  .pin .lbl{
+    margin-top:4px;font-size:11.5px;font-weight:700;color:var(--navy);
+    background:#fff;padding:2px 7px;border-radius:6px;border:1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .map-illustration{
+    background:var(--white);border:1px solid var(--line);border-radius:22px;padding:20px;
+    overflow-x: auto;
+  }
+
+  .faq-item{
+    border-bottom:1px solid var(--line);padding:16px 0;
+  }
+  .faq-q{
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+    font-weight:700;font-size:15px;color:var(--navy);
+  }
+  .faq-a{color:var(--ink-soft);font-size:14px;line-height:1.6;margin-top:10px;display:none;}
+  .faq-item.open .faq-a{display:block;}
+  .faq-item.open .chev{transform:rotate(180deg);}
+  .chev{transition:.2s;color:var(--gold);}
+
+  footer{background:var(--navy);color:#B9C4DA;margin-top:60px;}
+  .footer-inner{max-width:1180px;margin:0 auto;padding:40px 24px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;}
+  footer h4{color:#fff;font-size:14px;margin-bottom:10px;}
+  footer a{color:#B9C4DA;font-size:13px;display:block;padding:3px 0;}
+  footer a:hover{color:var(--gold);}
+  .foot-bottom{border-top:1px solid rgba(255,255,255,0.12);text-align:center;padding:16px;font-size:12px;color:#8A99B8;line-height:1.4;}
+
+  .quick-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;}
+  .qlink{
+    background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:#fff;
+    padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:600;
+  }
+  .qlink:hover{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+
+  ::selection{background:var(--gold);color:var(--navy);}
+
+  /* ============ GLOBAL RESPONSIVE SCALING (MOBILE FIXES) ============ */
+  @media (max-width:900px){
+    .grid.cols-3, .grid.cols-4{grid-template-columns:repeat(2,1fr);}
+    .two-col{grid-template-columns:1fr;gap:20px;}
+  }
+
+  @media (max-width:680px) {
+    .app, .trail, .topbar-inner, .footer-inner { padding-left: 16px; padding-right: 16px; }
+    .hero { padding: 36px 24px; border-radius: 16px; margin-bottom: 24px; }
+    .hero h1 { font-size: 28px; }
+    .hero p { font-size: 14.5px; }
+    .brand-text .k1 { font-size: 13.5px; }
+    .brand-text .k2 { font-size: 10px; }
+    nav.primary { display:none; } /* Hidden on smaller displays in favor of dashboard architecture */
+    
+    /* Ensure maps dynamically scroll horizontal context safely instead of crushing */
+    .map-illustration svg { min-width: 600px; }
+    .floorplan svg { min-width: 600px; }
+  }
+
+  @media (max-width:480px){
+    .grid.cols-2, .grid.cols-3, .grid.cols-4{grid-template-columns:1fr;}
+    .section-title h2 { font-size: 20px; }
+    .panel { padding: 18px; border-radius: 14px; }
+    .trail-strip { border-radius: 12px; padding: 4px; }
+    .trail-node { padding: 5px 10px; font-size: 12px; }
+    .footer-inner { flex-direction: column; gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand" onclick="go('home')">
+      <div class="brand-mark">UC</div>
+      <div class="brand-text">
+        <div class="k1">University of Cebu — Main</div>
+        <div class="k2">Senior High · Campus Guide</div>
+      </div>
+    </div>
+    <nav class="primary" id="primaryNav"></nav>
+  </div>
+</div>
+
+<div class="trail" id="trailWrap"></div>
+
+<div class="app">
+  <main id="main"></main>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="brand" style="cursor:default;">
+        <div class="brand-mark">UC</div>
+        <div class="brand-text">
+          <div class="k1" style="color:#fff;">University of Cebu</div>
+          <div class="k2">Main Campus · Senior High Dept.</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h4>Explore</h4>
+      <a href="#" onclick="go('map')">Campus Map</a>
+      <a href="#" onclick="go('tour')">Virtual Tour</a>
+      <a href="#" onclick="go('faq')">FAQ</a>
+    </div>
+    <div>
+      <h4>Connect</h4>
+      <a href="#">Facebook Page</a>
+      <a href="#">Official Website</a>
+      <a href="#" onclick="go('about')">Contact Information</a>
+    </div>
+  </div>
+  <div class="foot-bottom">© University of Cebu — Main Campus Senior High Department. Draft prototype for review — not final content.</div>
+</footer>
+
+<script>
+/* ============ ICONS (inline svg, stroke style) ============ */
+const icon = (name,size=20) => {
+  const s = `width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`;
+  const paths = {
+    building:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h1M8 11h1M8 15h1M15 7h1M15 11h1M15 15h1"/>',
+    map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z"/><path d="M9 4v14M15 6v14"/>',
+    room:'<path d="M4 21V5a2 2 0 0 1 2-2h7l7 7v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z"/><circle cx="14" cy="15" r="1"/>',
+    office:'<rect x="3" y="10" width="7" height="11"/><rect x="14" y="4" width="7" height="17"/><path d="M6 14h1M6 17h1M17 8h1M17 11h1M17 14h1"/>',
+    lab:'<path d="M9 3h6M10 3v6l-5 9a1.5 1.5 0 0 0 1.3 2.3h11.4A1.5 1.5 0 0 0 19 18l-5-9V3"/><path d="M7.5 15h9"/>',
+    facility:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+    tour:'<circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3V9Z" fill="currentColor" stroke="none"/>',
+    faq:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.7c0 1.6-2.4 1.8-2.4 3.6"/><path d="M12 17h.01"/>',
+    about:'<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/>',
+    pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.2"/>',
+    elevator:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M10 8l1.5-2L13 8M10 15l1.5 2 1.5-2"/>',
+    cr:'<circle cx="8" cy="6" r="1.6"/><path d="M8 8.5v6M6 10h4M6.5 14.5 8 22M9.5 14.5 8 22"/><circle cx="16" cy="6" r="1.6"/><path d="M13.7 22V15a1.4 1.4 0 0 1 2.8 0M16 22v-7"/>',
+    play:'<path d="M8 6v12l10-6-10-6Z" fill="currentColor" stroke="none"/>',
+    arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+    photo:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.7"/><path d="M21 16l-5.5-5-4 4-2-2L3 18"/>'
+  };
+  return `<svg ${s}>${paths[name]||''}</svg>`;
+};
+
+/* ============ CONTENT DATA ============ */
+const buildings = {
+  'building-a':{name:'Building A — Main Academic Hall', desc:'The primary instructional building for Senior High School, housing classrooms, the library, and administrative offices across four floors.', floors:['ground','2nd','3rd','4th']},
+  'building-b':{name:'Building B — Science & Technology Wing', desc:'Home to the science and computer laboratories, plus specialized classrooms for STEM strands.', floors:['ground','2nd']},
+};
+
+const rooms = {
+  '401':{name:'Room 401', floor:'Fourth Floor', desc:'A general classroom used for Humanities and Social Sciences (HUMSS) strand lectures, fitted with a projector and flexible seating.', nearby:['402','Science Laboratory','Comfort Room (4F)']},
+  '402':{name:'Room 402', floor:'Fourth Floor', desc:'A general classroom used for ABM strand lectures and small-group activities.', nearby:['401','403']},
+  '403':{name:'Room 403', floor:'Fourth Floor', desc:'A classroom used for STEM strand lectures, adjacent to the fourth-floor science laboratory.', nearby:['402','Science Laboratory']},
+};
+
+const offices = {
+  'registrar':{name:'Registrar', hours:'Mon–Fri, 8:00 AM – 5:00 PM', services:['Enrollment records','Certificates & TOR requests','Class schedule verification'], nearby:['Admissions Office','Cashier']},
+  'admissions':{name:'Admissions Office', hours:'Mon–Fri, 8:00 AM – 5:00 PM', services:['New student applications','Entrance assessment scheduling','Document evaluation'], nearby:['Registrar']},
+  'cashier':{name:'Cashier', hours:'Mon–Fri, 8:00 AM – 4:30 PM', services:['Tuition payments','Miscellaneous fee payments','Payment plan inquiries'], nearby:['Registrar']},
+  'clinic':{name:'Clinic', hours:'Mon–Fri, 7:30 AM – 5:00 PM', services:['First aid','Health consultations','Medical certificate requests'], nearby:['Guidance Office']},
+  'library':{name:'Library', hours:'Mon–Fri, 7:30 AM – 6:00 PM', services:['Book borrowing','Study areas','Research assistance'], nearby:['Study Area']},
+  'principal':{name:"Principal's Office", hours:'Mon–Fri, 8:00 AM – 5:00 PM', services:['Academic concerns','Parent consultations','Department coordination'], nearby:['Faculty Room']},
+  'faculty':{name:'Faculty Room', hours:'Mon–Fri, 7:30 AM – 5:30 PM', services:['Teacher consultations','Requirement submission'], nearby:["Principal's Office"]},
+  'guidance':{name:'Guidance Office', hours:'Mon–Fri, 8:00 AM – 5:00 PM', services:['Counseling sessions','Career guidance','Student well-being programs'], nearby:['Clinic']},
+};
+
+const labs = {
+  'science-lab':{name:'Science Laboratory', purpose:'Hands-on experiments for Biology, Chemistry, and Physics classes.', equipment:['Microscopes','Lab benches with gas & water lines','Fume hood','Safety shower & eyewash station'], location:'Fourth Floor, Building A'},
+  'computer-lab':{name:'Computer Laboratory', purpose:'ICT and Computer Programming classes, plus digital research work.', equipment:['40 desktop workstations','Projector & smart board','Local network & printer access'], location:'Second Floor, Building B'},
+};
+
+const facilities = {
+  'library-fac':{name:'Library', desc:'A quiet space for research, reading, and study, with a dedicated reference section for Senior High strands.', floor:'Ground Floor', nearby:['Study Area','Registrar']},
+  'canteen':{name:'Canteen', desc:'The main dining area offering meals, snacks, and beverages throughout the school day.', floor:'Ground Floor', nearby:['Covered Court']},
+  'clinic-fac':{name:'Clinic', desc:'On-campus first aid and health consultation services for students and staff.', floor:'Ground Floor', nearby:['Guidance Office']},
+  'gym':{name:'Gymnasium', desc:'Indoor venue for PE classes, sports training, and school-wide assemblies.', floor:'Ground Floor', nearby:['Covered Court']},
+  'court':{name:'Covered Court', desc:'Open-air multipurpose court used for PE activities, practices, and events.', floor:'Ground Floor', nearby:['Gymnasium','Canteen']},
+  'study-area':{name:'Study Area', desc:'A casual, open seating area for group study and independent work between classes.', floor:'Second Floor', nearby:['Library']},
+};
+
+const tourClips = [
+  {t:'Entrance to Lobby', d:'0:22'},
+  {t:'Lobby to Elevator', d:'0:18'},
+  {t:'Elevator to Fourth Floor', d:'0:15'},
+  {t:'Fourth Floor Hallway', d:'0:25'},
+  {t:'Science Laboratory', d:'0:30'},
+  {t:'Library', d:'0:28'},
+];
+
+const faqs = [
+  {q:'Where is the Registrar?', a:'The Registrar is on the Ground Floor of Building A, right beside the Admissions Office and Cashier.'},
+  {q:'Where is Room 401?', a:'Room 401 is on the Fourth Floor of Building A, next to Room 402 and the Science Laboratory.'},
+  {q:'How many floors does the campus have?', a:'Building A has four floors; Building B, the Science & Technology Wing, has two floors.'},
+  {q:'Where is the Clinic?', a:'The Clinic is on the Ground Floor, near the Guidance Office.'},
+  {q:'Where is the Library?', a:'The Library is on the Ground Floor of Building A, next to the Study Area.'},
+];
+
+/* ============ ROUTER ============ */
+const navItems = [
+  {id:'home', label:'Home'},
+  {id:'map', label:'Campus Map'},
+  {id:'tour', label:'Virtual Tour'},
+  {id:'about', label:'About'},
+  {id:'faq', label:'FAQ'},
+];
+function renderNav(active){
+  document.getElementById('primaryNav').innerHTML = navItems.map(n=>
+    `<button class="${active===n.id?'active':''}" onclick="go('${n.id}')">${n.label}</button>`
+  ).join('');
+}
+
+function trail(items){
+  document.getElementById('trailWrap').innerHTML = `<div class="trail-strip">${
+    items.map((it,i)=>{
+      const last = i===items.length-1;
+      const node = `<div class="trail-node ${last?'here':''}" ${it.click? `onclick="${it.click}"`:''} style="${it.click&&!last?'cursor:pointer':''}">${it.label}</div>`;
+      return node + (last?'':'<span class="trail-arrow">›</span>');
+    }).join('')
+  }</div>`;
+}
+
+function photoPlaceholder(label){
+  return `<div class="photo-block"><div class="ph-icon">${icon('photo',34)}</div><div class="ph-label">Photo — ${label}</div></div>`;
+}
+function videoPlaceholder(label,duration){
+  return `<div class="video-block"><div class="play-btn">${icon('play',22)}</div>
+    ${duration?`<div class="duration-chip">${duration}</div>`:''}
+    <div class="video-caption">${label}</div></div>`;
+}
+
+function go(route, param){
+  window.location.hash = param ? `${route}/${param}` : route;
+}
+
+function router(){
+  const hash = window.location.hash.replace('#','') || 'home';
+  const [route, param] = hash.split('/');
+  renderNav(route);
+  const el = document.getElementById('main');
+  window.scrollTo(0,0);
+
+  if(route==='home') return renderHome(el);
+  if(route==='map') return renderMap(el);
+  if(route==='building') return renderBuilding(el, param || 'building-a');
+  if(route==='floor') return renderFloor(el, param || '4th');
+  if(route==='room') return renderRoom(el, param || '401');
+  if(route==='offices') return renderOfficesList(el);
+  if(route==='office') return renderOffice(el, param || 'registrar');
+  if(route==='labs') return renderLabsList(el);
+  if(route==='lab') return renderLab(el, param || 'science-lab');
+  if(route==='facilities') return renderFacilitiesList(el);
+  if(route==='facility') return renderFacility(el, param || 'library-fac');
+  if(route==='tour') return renderTour(el);
+  if(route==='about') return renderAbout(el);
+  if(route==='faq') return renderFaq(el);
+  renderHome(el);
+}
+window.addEventListener('hashchange', router);
+window.addEventListener('DOMContentLoaded', router);
+
+/* ============ PAGES ============ */
+function renderHome(el){
+  trail([{label:'Home'}]);
+  el.innerHTML = `
+    <div class="hero">
+      <span class="eyebrow">UC Main · Senior High Department</span>
+      <h1 style="font-family:'Fraunces',serif;">Find your way around campus before you even arrive.</h1>
+      <p>Photos, floor plans, and short walkthrough videos for every building, office, and classroom — scan the poster QR code or browse from here.</p>
+      <button class="btn" onclick="go('map')">${icon('map',16)} Start the Tour</button>
+      <div class="quick-links">
+        <span class="qlink" onclick="go('offices')">Offices</span>
+        <span class="qlink" onclick="go('labs')">Laboratories</span>
+        <span class="qlink" onclick="go('facilities')">Facilities</span>
+        <span class="qlink" onclick="go('tour')">Virtual Tour</span>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Get around</h2><span class="num">01 — QUICK ACCESS</span></div>
+    <div class="grid cols-3">
+      ${quickCard('map','Campus Map','Click a building on the map to see photos and details.', "go('map')")}
+      ${quickCard('building','Buildings & Floors','Browse floor plans and pinned room locations.', "go('building','building-a')")}
+      ${quickCard('office','Offices','Hours, services, and directions for every office.', "go('offices')")}
+      ${quickCard('lab','Laboratories','Equipment, purpose, and location for each lab.', "go('labs')")}
+      ${quickCard('facility','Facilities','Library, clinic, canteen, gym, and more.', "go('facilities')")}
+      ${quickCard('faq','FAQ','Quick answers to the most-asked questions.', "go('faq')")}
+    </div>
+
+    <div class="section-title" style="margin-top:38px;"><h2>Featured: Virtual Campus Tour</h2><span class="num">02 — WALKTHROUGH</span></div>
+    <div class="panel">
+      <p style="color:var(--ink-soft);font-size:14.5px;margin:0 0 16px 0;">Short video clips that walk you from the entrance to a room, step by step — watch before you visit in person.</p>
+      <div class="grid cols-3">
+        ${tourClips.slice(0,3).map(c=>`<div style="display:flex;flex-direction:column;gap:8px;">${videoPlaceholder(c.t,c.d)}</div>`).join('')}
+      </div>
+      <button class="btn small" style="margin-top:18px;" onclick="go('tour')">See all clips ${icon('arrow',14)}</button>
+    </div>
+  `;
+}
+function quickCard(iconName,title,desc,onclick){
+  return `<div class="card" onclick="${onclick}" style="cursor:pointer;">
+    <div class="icon">${icon(iconName,20)}</div>
+    <h3>${title}</h3>
+    <p>${desc}</p>
+  </div>`;
+}
+
+function renderMap(el){
+  trail([{label:'Home', click:"go('home')"},{label:'Campus Map'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Campus Map</h2><span class="num">TAP A BUILDING</span></div>
+    <div class="map-illustration">
+      <svg viewBox="0 0 900 420" width="100%" style="display:block;">
+        <rect x="0" y="0" width="900" height="420" rx="18" fill="#F6F8FB"/>
+        <path d="M60 340 H 840" stroke="#DCE2ED" stroke-width="14" stroke-linecap="round"/>
+        <path d="M60 340 H 840" stroke="#fff" stroke-width="2" stroke-dasharray="6 10"/>
+
+        <!-- Building A -->
+        <g onclick="go('building','building-a')" style="cursor:pointer;">
+          <rect x="90" y="120" width="220" height="180" rx="10" fill="#0B1F3F"/>
+          <rect x="112" y="145" width="34" height="34" fill="#D6AD3F" opacity="0.9"/>
+          <rect x="156" y="145" width="34" height="34" fill="#16407F"/>
+          <rect x="200" y="145" width="34" height="34" fill="#16407F"/>
+          <rect x="244" y="145" width="34" height="34" fill="#D6AD3F" opacity="0.9"/>
+          <rect x="112" y="195" width="34" height="34" fill="#16407F"/>
+          <rect x="156" y="195" width="34" height="34" fill="#D6AD3F" opacity="0.9"/>
+          <rect x="200" y="195" width="34" height="34" fill="#16407F"/>
+          <rect x="244" y="195" width="34" height="34" fill="#16407F"/>
+          <text x="200" y="255" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600">BUILDING A</text>
+          <text x="200" y="272" text-anchor="middle" fill="#B9C4DA" font-family="Inter, sans-serif" font-size="10.5">Main Academic Hall</text>
+        </g>
+
+        <!-- Building B -->
+        <g onclick="go('building','building-b')" style="cursor:pointer;">
+          <rect x="400" y="150" width="170" height="150" rx="10" fill="#16407F"/>
+          <rect x="418" y="172" width="30" height="30" fill="#D6AD3F" opacity="0.9"/>
+          <rect x="456" y="172" width="30" height="30" fill="#0B1F3F"/>
+          <rect x="494" y="172" width="30" height="30" fill="#0B1F3F"/>
+          <rect x="418" y="212" width="30" height="30" fill="#0B1F3F"/>
+          <rect x="456" y="212" width="30" height="30" fill="#D6AD3F" opacity="0.9"/>
+          <rect x="494" y="212" width="30" height="30" fill="#0B1F3F"/>
+          <text x="485" y="255" text-anchor="middle" fill="#fff" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">BUILDING B</text>
+          <text x="485" y="270" text-anchor="middle" fill="#CBD5EA" font-family="Inter, sans-serif" font-size="9.5">Science &amp; Tech Wing</text>
+        </g>
+
+        <!-- Gym / Court -->
+        <g onclick="go('facility','court')" style="cursor:pointer;">
+          <rect x="640" y="170" width="200" height="120" rx="10" fill="#EEF1F6" stroke="#0B1F3F" stroke-width="2.5"/>
+          <line x1="740" y1="170" x2="740" y2="290" stroke="#0B1F3F" stroke-width="2"/>
+          <circle cx="740" cy="230" r="22" fill="none" stroke="#0B1F3F" stroke-width="2"/>
+          <text x="740" y="322" text-anchor="middle" fill="#0B1F3F" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="600">COVERED COURT</text>
+        </g>
+
+        <!-- Canteen -->
+        <g onclick="go('facility','canteen')" style="cursor:pointer;">
+          <rect x="620" y="330" width="120" height="55" rx="8" fill="#D6AD3F"/>
+          <text x="680" y="362" text-anchor="middle" fill="#0B1F3F" font-family="IBM Plex Mono, monospace" font-size="11.5" font-weight="700">CANTEEN</text>
+        </g>
+
+        <text x="450" y="30" text-anchor="middle" fill="#5C6B87" font-family="Inter, sans-serif" font-size="12" letter-spacing="1">MAIN WALKWAY</text>
+      </svg>
+      <p style="color:var(--ink-soft);font-size:13px;margin-top:10px;">Illustrated overview map — scroll horizontally on small phones. Tap outlines to view details.</p>
+    </div>
+
+    <div class="section-title" style="margin-top:34px;"><h2>Buildings</h2><span class="num">02</span></div>
+    <div class="grid cols-2">
+      ${Object.entries(buildings).map(([id,b])=>`
+        <div class="card" onclick="go('building','${id}')" style="cursor:pointer;">
+          ${photoPlaceholder(b.name)}
+          <h3>${b.name}</h3>
+          <p>${b.desc}</p>
+          <span class="tag">${b.floors.length} floor${b.floors.length>1?'s':''}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderBuilding(el, id){
+  const b = buildings[id];
+  trail([{label:'Home', click:"go('home')"},{label:'Campus Map', click:"go('map')"},{label:b.name.split('—')[0].trim()}]);
+  el.innerHTML = `
+    <div class="two-col">
+      <div>
+        ${photoPlaceholder(b.name)}
+        <div class="panel" style="margin-top:16px;">
+          <h2 style="font-size:22px;">${b.name}</h2>
+          <p style="color:var(--ink-soft);margin-top:10px;">${b.desc}</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-title" style="margin:0 0 12px 0;"><h2 style="font-size:17px;">Floors</h2></div>
+        <ul class="nearby-list">
+          ${b.floors.map(f=>`<li onclick="go('floor','${f}')" style="cursor:pointer;">${f.charAt(0).toUpperCase()+f.slice(1)} Floor <span class="go">${icon('arrow',16)}</span></li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:30px;"><h2>What's inside?</h2><span class="num">ROOMS</span></div>
+    <div class="grid cols-3">
+      ${Object.entries(rooms).map(([rid,r])=>`
+        <div class="card" onclick="go('room','${rid}')" style="cursor:pointer;">
+          <div class="icon">${icon('room',20)}</div>
+          <h3 class="mono">Room ${rid}</h3>
+          <p>${r.floor}</p>
+        </div>
+      `).join('')}
+      ${quickCard('lab','Science Laboratory','See equipment and photos.', "go('lab','science-lab')")}
+    </div>
+  `;
+}
+
+function renderFloor(el, id){
+  trail([{label:'Home', click:"go('home')"},{label:'Building A', click:"go('building','building-a')"},{label: id.charAt(0).toUpperCase()+id.slice(1)+' Floor'}]);
+  const pins = [
+    {x:'22%', y:'40%', label:'Room 401', click:"go('room','401')"},
+    {x:'40%', y:'30%', label:'Room 402', click:"go('room','402')"},
+    {x:'58%', y:'40%', label:'Room 403', click:"go('room','403')"},
+    {x:'75%', y:'25%', label:'Sci. Lab', click:"go('lab','science-lab')"},
+    {x:'85%', y:'55%', label:'Comfort Room', click:"go('facility','library-fac')"},
+  ];
+  el.innerHTML = `
+    <div class="section-title"><h2>${id.charAt(0).toUpperCase()+id.slice(1)} Floor — Building A</h2><span class="num">FLOOR GUIDE</span></div>
+    <div class="floorplan">
+      <svg width="100%" height="320" viewBox="0 0 800 320" style="position:absolute;top:0;left:0;opacity:0.5;">
+        <rect x="30" y="30" width="740" height="260" fill="none" stroke="#DCE2ED" stroke-width="2"/>
+        <line x1="30" y1="160" x2="770" y2="160" stroke="#DCE2ED" stroke-width="2"/>
+        <line x1="250" y1="30" x2="250" y2="290" stroke="#DCE2ED" stroke-width="2"/>
+        <line x1="480" y1="30" x2="480" y2="290" stroke="#DCE2ED" stroke-width="2"/>
+      </svg>
+      ${pins.map(p=>`
+        <div class="pin" style="left:${p.x};top:${p.y};" onclick="${p.click}">
+          <div class="dot"><span>${icon('pin',14)}</span></div>
+          <div class="lbl">${p.label}</div>
+        </div>
+      `).join('')}
+    </div>
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:14px;">Tap a pin to open that room, laboratory, or facility. Swipe right to view hidden areas on narrow mobile devices.</p>
+  `;
+}
+
+/* Fixed truncated function context gracefully closing layout fragments */
+function renderRoom(el, id){
+  const r = rooms[id];
+  trail([{label:'Home', click:"go('home')"},{label:'Building A', click:"go('building','building-a')"},{label:'4th Floor', click:"go('floor','4th')"},{label:'Room '+id}]);
+  el.innerHTML = `
+    <div class="two-col">
+      <div>
+        ${photoPlaceholder('Room '+id)}
+        <div style="margin-top:14px;">${videoPlaceholder('Walkthrough — Room '+id, '0:20')}</div>
+      </div>
+      <div class="panel">
+        <h2 class="mono" style="font-size:22px;">${r.name}</h2>
+        <p style="color:var(--ink-soft);margin-top:10px;">${r.desc}</p>
+        <div class="meta-row">
+          <div class="meta-chip"><span class="dot"></span>${r.floor}</div>
+          <div class="meta-chip">${icon('elevator',14)} Elevator Accessible</div>
+        </div>
+        <div class="section-title" style="margin-top:24px;"><h2>Nearby Destinations</h2></div>
+        <ul class="nearby-list">
+          ${r.nearby.map(n => `<li>${n}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderOfficesList(el) {
+  trail([{label:'Home', click:"go('home')"},{label:'Offices'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Campus Offices</h2></div>
+    <div class="grid cols-3">
+      ${Object.entries(offices).map(([id, o]) => `
+        <div class="card" onclick="go('office','${id}')" style="cursor:pointer;">
+          <div class="icon">${icon('office', 20)}</div>
+          <h3>${o.name}</h3>
+          <p>${o.hours}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderOffice(el, id) {
+  const o = offices[id];
+  trail([{label:'Home', click:"go('home')"},{label:'Offices', click:"go('offices')"},{label:o.name}]);
+  el.innerHTML = `
+    <div class="two-col">
+      <div class="panel">
+        <h2>${o.name}</h2>
+        <div class="meta-row" style="margin-bottom:16px;">
+          <div class="meta-chip">${icon('clock', 14)} ${o.hours}</div>
+        </div>
+        <h3>Services</h3>
+        <ul style="padding-left:20px; color:var(--ink-soft); line-height:1.6;">
+          ${o.services.map(s=>`<li>${s}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderLabsList(el) {
+  trail([{label:'Home', click:"go('home')"},{label:'Laboratories'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Campus Laboratories</h2></div>
+    <div class="grid cols-2">
+      ${Object.entries(labs).map(([id, l]) => `
+        <div class="card" onclick="go('lab','${id}')" style="cursor:pointer;">
+          <div class="icon">${icon('lab', 20)}</div>
+          <h3>${l.name}</h3>
+          <p>${l.location}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderLab(el, id) {
+  const l = labs[id];
+  trail([{label:'Home', click:"go('home')"},{label:'Laboratories', click:"go('labs')"},{label:l.name}]);
+  el.innerHTML = `
+    <div class="two-col">
+      <div class="panel">
+        <h2>${l.name}</h2>
+        <p style="color:var(--ink-soft);">${l.purpose}</p>
+        <h3>Equipment Highlight</h3>
+        <ul style="padding-left:20px; color:var(--ink-soft); line-height:1.6;">
+          ${l.equipment.map(e=>`<li>${e}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+function renderFacilitiesList(el) {
+  trail([{label:'Home', click:"go('home')"},{label:'Facilities'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Campus Facilities</h2></div>
+    <div class="grid cols-3">
+      ${Object.entries(facilities).map(([id, f]) => `
+        <div class="card" onclick="go('facility','${id}')" style="cursor:pointer;">
+          <div class="icon">${icon('facility', 20)}</div>
+          <h3>${f.name}</h3>
+          <p>${f.floor}</p>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderFacility(el, id) {
+  const f = facilities[id];
+  trail([{label:'Home', click:"go('home')"},{label:'Facilities', click:"go('facilities')"},{label:f.name}]);
+  el.innerHTML = `
+    <div class="two-col">
+      <div class="panel">
+        <h2>${f.name}</h2>
+        <p style="color:var(--ink-soft); line-height:1.6;">${f.desc}</p>
+        <div class="meta-row">
+          <div class="meta-chip"><span class="dot"></span>Location: ${f.floor}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTour(el){
+  trail([{label:'Home', click:"go('home')"},{label:'Virtual Tour'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Virtual Tour Clips</h2></div>
+    <div class="grid cols-3">
+      ${tourClips.map(c=>`<div style="display:flex;flex-direction:column;gap:8px;">${videoPlaceholder(c.t,c.d)}</div>`).join('')}
+    </div>
+  `;
+}
+
+function renderAbout(el){
+  trail([{label:'Home', click:"go('home')"},{label:'About'}]);
+  el.innerHTML = `
+    <div class="panel">
+      <h2>About the Campus Guide</h2>
+      <p style="color:var(--ink-soft); line-height:1.6;">This interactive application helps Senior High School students navigate the dynamic academic environment of the University of Cebu — Main Campus effortlessly.</p>
+    </div>
+  `;
+}
+
+function renderFaq(el){
+  trail([{label:'Home', click:"go('home')"},{label:'FAQ'}]);
+  el.innerHTML = `
+    <div class="section-title"><h2>Frequently Asked Questions</h2></div>
+    <div class="panel">
+      ${faqs.map((f, i)=>`
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q"><span>${f.q}</span><span class="chev">▼</span></div>
+          <div class="faq-a">${f.a}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
